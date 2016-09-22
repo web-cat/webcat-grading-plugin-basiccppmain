@@ -1,0 +1,23 @@
+#This file is automatically rewritten by ANT.  Hand-edits may be lost.
+#Wed Sep 21 22:19:33 EDT 2016
+timeoutMultiplier=1
+version.minor=1
+copyright="(c) 2006-2008 Virginia Tech Department of Computer Science"
+requires=( ANTForPlugins, PerlForPlugins )
+license.url="http\://www.gnu.org/licenses/agpl.html"
+author="Tony Allevato (allevato@vt.edu)"
+executable=execute.pl
+license="GNU Affero General Public License v.3"
+info.url="http\://web-cat.cs.vt.edu/WCWiki/BasicCppMainPlugin"
+interpreter.prefix="${PerlForPlugins.perl.exe}"
+languages=( { name \= "C++"; version \= "g++ 3.4.x"; } )
+autoPublish=false
+version.major=1
+version.date=20160921
+history.url="http\://web-cat.cs.vt.edu/WCWiki/BasicCppMainPlugin/ChangeHistory"
+timeoutInternalPadding=30
+provider="Virginia Tech Computer Science"
+authorUid=aallowat
+provider.url="http\://web-cat.cs.vt.edu/updates"
+version.revision=0
+name=BasicCppMainPlugin

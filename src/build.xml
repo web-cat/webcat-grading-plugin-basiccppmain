@@ -1,0 +1,310 @@
+<project name="web-cat" default="run">
+
+    <!-- ============================================================
+         Property Definitions
+         ============================================================ -->
+
+    <property environment="env"/>
+    <property name="build"  value="${resultDir}/bin"/>
+    <property name="instructor.tests.name" value="runInstructorTests"/>
+    <property name="instructor.tests.path" value="${build}/${instructor.tests.name}.exe"/>
+    <property name="exec.timeout" value="10000"/>
+    <property name="cxxtest.basedir" location="${scriptHome}/cxxtest"/>
+    <property name="cxxtest.includedir" location="${cxxtest.basedir}/include"/>
+    <property name="testCasePath" location="${scriptHome}/tests"/>
+    <property name="testCasePattern" value="**/*.h"/>
+    <property name="quote" value="&quot;"/>
+    
+    <taskdef resource="cpptasks.tasks"/>
+    <typedef resource="cpptasks.types"/>
+
+
+    <!-- ============================================================
+         Initialization and OS-specific setup
+         ============================================================ -->
+
+    <!-- The following properties check OS and check for OS-dependent
+         binary files. -->
+    <condition property="is.mac">
+        <os family="mac"/>
+    </condition>
+    <condition property="is.win">
+        <os family="windows"/>
+    </condition>
+    <condition property="is.other">
+        <and>
+          <not><isset property="is.mac"/></not>
+          <not><isset property="is.win"/></not>
+        </and>
+    </condition>
+    <available property="has.assert.o" file="${scriptHome}/obj/assert.o"/>
+
+    <condition property="doStyleChecks">
+      <and>
+        <istrue value="${wantStyleChecks}"/>
+        <isset property="doxygenDir"/>
+      </and>
+    </condition>
+
+    <condition property="doVera">
+      <and>
+        <istrue value="${wantStyleChecks}"/>
+        <available file="${scriptHome}/vera/vera++"/>
+      </and>
+    </condition>
+
+    <!-- Set OS-specific property values -->
+    <target name="mac.properties" if="is.mac">
+      <property name="cxxtest.extra.libs"
+        value=""/>
+      <property name="cxxtest.debug.flag"
+        value="-gstabs"/>
+      <property name="cxxtest.other.flag"
+        value=""/>
+      <property name="cxxtest.dereferee.platform"
+        value="gcc_macosx_platform"/>
+    </target>
+
+    <target name="win.properties" if="is.win">
+        <property name="cxxtest.extra.libs"
+          value=",bfd,iberty,intl,zlongname"/>
+        <property name="cxxtest.debug.flag"
+          value="-g3"/>
+        <property name="cxxtest.other.flag"
+          value="-"/>
+        <property name="cxxtest.dereferee.platform"
+          value="gcc_bfd_platform"/>
+    </target>
+
+    <target name="nonmac.nonwin.properties" if="is.other">
+        <property name="cxxtest.extra.libs"
+          value=",dl,bfd,iberty,pthread"/>
+        <property name="cxxtest.debug.flag"
+          value="-g3"/>
+        <property name="cxxtest.other.flag"
+          value="-rdynamic"/>
+        <property name="cxxtest.dereferee.platform"
+          value="gcc_bfd_platform"/>
+    </target>
+
+    <!-- Build OS-specific binary files, if necessary -->
+    <target name="assert.o" unless="has.assert.o">
+      <cc name="gcc" objdir="${scriptHome}/obj">
+        <compilerarg value="-c"/>
+        <compilerarg value="-w"/>
+        <compilerarg value="-O0"/>
+        <compilerarg value="${cxxtest.debug.flag}"/>
+        <fileset dir="${scriptHome}/obj" includes="*.c"/>
+      </cc>
+    </target>
+
+    <!-- Make sure all initial setup is performed correctly. -->
+    <target name="init"
+      depends="mac.properties,win.properties,nonmac.nonwin.properties,assert.o"
+      description="Initialize necessary properties">
+    </target>
+
+
+    <!-- ============================================================
+         Individual targets
+         ============================================================ -->
+
+    <target name="clean"
+        depends="init"
+        description="removes compiled classes">
+    <echo message="basedir = ${basedir}"/>
+    <echo message="timeout = ${exec.timeout} (for each of two test runs)"/>
+    <echo message="env.Path = ${env.Path}"/>
+    <delete includeEmptyDirs="true">
+        <fileset dir="${resultDir}" casesensitive="false">
+        <include name="bin/"/>
+        </fileset>
+    </delete>
+    <delete includeEmptyDirs="true">
+        <fileset dir="${basedir}">
+        <include name="**/*.exe"/>
+        <include name="**/*.o"/>
+        <include name="**/*.obj"/>
+        <include name="Debug/"/>
+        <include name="Release/"/>
+        </fileset>
+    </delete>
+    <mkdir dir="${build}"/>
+    </target>
+
+
+    <target name="generateInstructorMain"
+    description="generate runInstructorTests.cpp from instructor's tests">
+    <apply executable="java"
+           failonerror="true"
+           parallel="true"
+           skipemptyfilesets="true"
+           forwardslash="true">
+        <arg value="-jar"/>
+        <arg file="${cxxtest.basedir}/cxxtestgen.jar"/>
+        <arg value="--listener=ErrorPrinter"/>
+        <arg value="--listener=WebCATPlistListener"/>
+        <arg value="--listener=MemoryTrackingListener"/>
+        <arg value="--backtrace"/>
+        <arg value="--dereferee-platform=${cxxtest.dereferee.platform}"/>
+        <arg value="--dereferee-listener=cxxtest_listener"/>
+        <arg value="--include-dereferee"/>
+        <arg value="-o"/>
+        <arg file="${build}/runInstructorTests.cpp"/>
+        <fileset dir="${testCasePath}" casesensitive="no">
+            <include name="${testCasePattern}"/>
+        </fileset>
+    </apply>
+    </target>
+
+
+    <target name="compile" depends="init" description="compile student's code">
+    <cc name="g++" objdir="${build}">
+        <compilerarg value="-c"/>
+        <compilerarg value="-O0"/>
+        <compilerarg value="-std=c++11"/>
+        <compilerarg value="${cxxtest.debug.flag}"/>
+        <compilerarg value="-fnon-call-exceptions"/>
+        <compilerarg value="-finstrument-functions"/>
+        <compilerarg value="-Dmain=__student_main"/>
+        <includepath location="${basedir}"/>
+        <includepath location="${assignmentIncludes.abs}" if="assignmentIncludes.abs"/>
+        <includepath location="${generalIncludes.abs}" if="generalIncludes.abs"/>
+        <fileset dir="${basedir}" casesensitive="false">
+            <include name="**/*.cpp"/>
+            <exclude name="**/runAllTests.cpp"/>
+            <exclude name="**/run*Tests.cpp"/>
+        </fileset>
+    </cc>
+    </target>
+
+
+    <target name="compileInstructorTests"
+        depends="init,generateInstructorMain,compile"
+        description="compile student's code with instructor's tests">
+    <mkdir dir="__"/>
+    <cc    name="g++"
+           objdir="${build}"
+           outfile="${instructor.tests.path}"
+           outtype="executable">
+        <compilerarg value="-O0"/>
+        <compilerarg value="-std=c++11"/>
+        <compilerarg value="${cxxtest.debug.flag}"/>
+        <compilerarg value="${cxxtest.other.flag}"/>
+        <compilerarg value="-fnon-call-exceptions"/>
+        <compilerarg value="-finstrument-functions"/>
+        <compilerarg value="-DHINT_PREFIX=hint:"/>
+        <includepath location="${cxxtest.includedir}"/>
+        <includepath location="${basedir}"/>
+        <includepath location="${assignmentIncludes.abs}" if="assignmentIncludes.abs"/>
+        <includepath location="${generalIncludes.abs}" if="generalIncludes.abs"/>
+        <includepath location="__"/>
+        <fileset dir="${build}">
+            <include name="runInstructorTests.cpp"/>
+        </fileset>
+        <fileset dir="${scriptHome}/obj">
+            <include name="**/*.o"/>
+        </fileset>
+        <fileset dir="${build}">
+            <include name="**/*.o"/>
+            <exclude name="runInstructorTests.o"/>
+        </fileset>
+        <linkerarg location="start" value="-L${assignmentLib.abs}" if="assignmentLib.abs"/>
+        <!-- linkerarg location="start" value="- -enable-auto-import" if="is.win"/ -->
+        <!-- linkerarg location="start" value="-Wl,- -export-all-symbols"/ -->
+        <libset libs="${extraLinkLibraries}" if="extraLinkLibraries"/>
+    	<libset libs="stdc++${cxxtest.extra.libs}"/>
+        <!-- linkerarg location="end" value ="${generalLib.abs}" if="generalLib.abs"/ -->
+    </cc>
+    </target>
+
+
+    <target name="instructorTest" depends="compileInstructorTests"
+        description="run instructor's test cases">
+    <exec executable="${instructor.tests.path}" timeout="${exec.timeout}">
+        <env key="RESULT_DIR" file="${resultDir}"/>
+        <env key="WEBCAT_PLIST_FRAGMENT_PATH" file="${resultDir}/instr.inc"/>
+        <env key="DEREFEREE_LISTENER_OPTIONS"
+             value="webcat.stats.path=${resultDir}/instr-dereferee.inc;max.leaks.to.report=20"/>
+    	<env key="MALLOC_CHECK_" value="0"/>
+    </exec>
+    </target>
+
+
+    <target name="vera"
+            description="Does basic style checks using vera++"
+            if="doVera">
+
+      <!-- Run vera++ -->
+      <apply executable="${scriptHome}/vera/vera++"
+            failonerror="false"
+            parallel="true"
+            output="${resultDir}/vera.log">
+        <env key="VERA_ROOT" file="${scriptHome}/vera"/>
+        <arg value="-profile"/>
+        <arg value="webcat"/>
+        <fileset dir="${basedir}" casesensitive="false">
+            <include name="**/*.c"/>
+            <include name="**/*.cxx"/>
+            <include name="**/*.cpp"/>
+            <exclude name="**/runAllTests.cpp"/>
+            <exclude name="**/run*Tests.cpp"/>
+        </fileset>
+      </apply>
+    </target>
+
+
+    <target name="doxygen"
+            description="Does documentation checking with Doxygen"
+            if="doStyleChecks">
+
+      <!-- Fill in the doxygen configuration template with the correct paths -->
+      <copy file="${scriptHome}/doxygen.config.template"
+            tofile="${basedir}/doxygen.config">
+        <filterchain>
+          <replacetokens>
+            <token key="scriptHome" value="${scriptHome}"/>
+            <token key="doxygenInputDir" value="${basedir}"/>
+            <token key="doxygenOutputDir" value="${basedir}/doxygen"/>
+          </replacetokens>
+        </filterchain>
+      </copy>
+
+      <!-- Run the doxygen tool -->
+      <exec executable="${doxygenDir}/doxygen" failonerror="false">
+        <arg value="${basedir}/doxygen.config"/>
+      </exec>
+
+      <copy file="${basedir}/doxygen_warnings.log" tofile="${resultDir}/doxygen_warnings.log"/>
+      <delete file="${basedir}/doxygen_warnings.log"/>
+
+      <!-- Delete the Doxygen generated files from the working dir so they
+           don't all get copied into the result dir -->
+      <delete dir="${basedir}/doxygen"/>
+      <delete file="${basedir}/doxygen.config"/>
+    </target>
+
+
+    <target name="final-clean" unless="doNotDelete"
+        description="removes unnecessary derived files">
+    <delete includeEmptyDirs="true">
+        <fileset dir="${resultDir}" casesensitive="false">
+            <include name="bin/"/>
+        </fileset>
+    </delete>
+    <delete includeEmptyDirs="true">
+        <fileset dir="${basedir}">
+            <include name="__/"/>
+        </fileset>
+    </delete>
+    </target>
+
+
+    <!-- ============================================================
+         The main target
+         ============================================================ -->
+
+    <target name="run"
+            depends="init, clean, vera, doxygen, instructorTest, final-clean"/>
+
+</project>

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<history>
+   <processor signature="gcc noversion nomachine -c -w -O0 -g3 -c">
+      <target file="assert.o" lastModified="1373733d9b0">
+         <source file="assert.c" lastModified="1373733aad0"/>
+      </target>
+   </processor>
+</history>

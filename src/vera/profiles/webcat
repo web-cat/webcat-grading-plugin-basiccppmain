@@ -1,0 +1,22 @@
+# This file defines the set of scripts (rules) that should be executed
+# by default (if no specific profile is named when vera++ is launched).
+
+set rules {
+    L004
+    L005
+
+    T001
+    T002
+    T003
+    T004
+    T005
+    T006
+    T007
+    T008
+    T009
+    T011
+    T017
+    T018
+    T019
+    T020
+}

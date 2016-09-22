@@ -1,0 +1,174 @@
+{
+    name             = BasicCppMainPlugin;
+    version.major    = 1;
+    version.minor    = 1;
+    version.revision = 0;
+    version.date     = 20120104;
+    autoPublish      = false;
+    requires         = ( ANTForPlugins, PerlForPlugins );
+    provider         = "Virginia Tech Computer Science";
+    provider.url     = "http://web-cat.cs.vt.edu/updates";
+    license          = "GNU Affero General Public License v.3";
+    license.url      = "http://www.gnu.org/licenses/agpl.html";
+    copyright        = "(c) 2006-2008 Virginia Tech Department of Computer Science";
+    info.url         = "http://web-cat.cs.vt.edu/WCWiki/BasicCppMainPlugin";
+    history.url      = "http://web-cat.cs.vt.edu/WCWiki/BasicCppMainPlugin/ChangeHistory";
+    executable       = execute.pl;
+    interpreter.prefix = "${PerlForPlugins.perl.exe}";
+    author     = "Tony Allevato (allevato@vt.edu)";
+    authorUid  = aallowat;
+    languages  = ( { name = "C++"; version = "g++ 3.4.x"; } );
+    description = "This plug-in supports grading of student code that is
+written in a procedural style and uses cin and cout for I/O. Instructors
+can write CxxTest unit tests that replace cin/cout with string streams so
+that input can be provided and output can be checked.";
+    timeoutMultiplier = 1;
+    timeoutInternalPadding = 30;
+    assignmentOptions = (
+        {
+            property    = testCases;
+            type        = fileOrDir;
+            fileTypes   = ( h );
+            name        = "CxxTest Reference Test Class(es)";
+            description =
+  "A C++ header file (or directory of header files) containing CxxTest tests
+  to run against student code to assess completeness of problem coverage.
+  If you select a single C++ header file, it must contain a CxxTest test class
+  definition.  If you select a directory, it should contain CxxTest test
+  classes, all of which will be used.  If you make no selection, an empty
+  set of instructor reference tests will be used instead.";
+        },
+        {
+            property    = localFiles;
+            type        = fileOrDir;
+            name        = "Data Files for Student";
+            description =
+  "A file (or a directory of files) to place in the student's current working
+  directory when running his/her tests and when running reference tests.  The
+  file you select (or the entire contents of the directory you select) will be
+  copied into the current working directory during grading so that
+  student-written and instructor-written test cases can read and/or write to
+  the file(s).  The default is to copy no files.";
+        },
+        {
+            property    = assignmentIncludes;
+            type        = fileOrDir;
+            fileTypes   = ();
+            name        = "#Include Directory";
+            description =
+  "A directory of files to place on the include path while compiling the
+  student's code (as well as instructor reference tests).  This directory
+  appears earlier on the include path than the reusable configuration setting.
+  The default is to use no path.";
+        },
+        {
+            property    = assignmentLib;
+            type        = fileOrDir;
+            fileTypes   = ( a );
+            name        = "Static Library Directory";
+            description =
+  "A directory containing additional static link libraries (which can be listed in
+   the Static Link Libraries option below).";
+        },
+        {
+            property    = extraLinkLibraries;
+            type        = shortText;
+            size         = 40;
+            name        = "Static Link Libraries";
+            description =
+  "A string containing comma-separated link libraries (without 'lib' prefixes
+   or .so/.a suffixes) to be included in the build.";
+        }
+    );
+    optionCategories = (
+        "C++ Settings",
+        "Scoring Settings",
+        "Feedback Settings",
+        "Script Developer"
+    );
+    options = (
+        {
+            property    = generalIncludes;
+            type        = fileOrDir;
+            fileTypes   = ();
+            name        = "#Include Directory";
+            description =
+  "A directory of files to place on the include path while compiling the
+  student's code (as well as instructor reference tests).  This directory
+  appears later on the include path than the assignment-specific configuration
+  setting.  The default is to use no path.";
+        },
+        {
+            property    = generalLib;
+            type        = file;
+            fileTypes   = ( a );
+            name        = "Static Linking Library";
+            category    = "C++ Settings";
+            description =
+  "A g++-compatible library file to link with the student's code.";
+        },
+        {
+            property    = hintsLimit;
+            type        = integer;
+            default     = 3;
+            name        = "Hints Limit";
+            category    = "Feedback Settings";
+            description = "Maximum number of hints the
+                           student will receive from failed reference tests.";
+        },
+        {
+            property    = wantStyleChecks;
+            type        = boolean;
+            default     = true;
+            name        = "Perform code style analysis?";
+            category    = "Scoring Settings";
+            description =
+  "Set to true to perform basic style checks on student code. If Doxygen is
+  installed and configured in the plug-in's global settings, then it will be
+  used to check that functions, classes, structs, and so forth are properly
+  documented. If Vera is installed in the plug-in, then it will also be used
+  to perform basic style checks.";
+        },
+        {
+            property    = debug;
+            type        = integer;
+            advanced    = true;
+            default     = 0;
+            name        = "Debug Level";
+            category    = "Script Developer";
+            description =
+  "Set to a non-zero value for the script to produce debugging output (the
+  larger the number, the greater the detail, up to about 5).  Debugging output
+  on each grading script run will be e-mailed to the instructor.";
+        },
+        {
+            property    = doNotDelete;
+            type        = antBoolean;
+            advanced    = true;
+            name        = "Preserve Derived Files";
+            category    = "Script Developer";
+            description =
+  "Set to true to prevent the plug-in from deleting the derived files it
+  creates during the build/test process for each submission.  Normally, these
+  files are deleted when a given submission has been completely processed.
+  This setting is provided for debugging purposes, when one wishes to
+  inspect the intermediate test driver source code or other derived files.";
+        }
+    );
+    globalOptions = (
+        {
+            property    = doxygenDir;
+            type        = shortText;
+            size        = 40;
+            name        = "Doxygen Directory";
+            description =
+  "The directory on the local server that contains the Doxygen executable.
+  Doxygen is used to check the documentation of the code that students
+  submit; if you do not have a copy of Doxygen or wish to
+  disable documentation checking across all assignments, you can leave this
+  field blank. If you are not the user administering this Web-CAT server,
+  you will need to have your system administrator install this tool and set
+  this path if you wish to use it.";
+        }
+    );
+}
